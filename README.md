@@ -48,7 +48,7 @@ Now we have a few parameters to set the graph. They are at the beginning of the 
 * The maximum length of a CPU line, now set to 2000px: *maxLength = 2000*;
 
 
-### Futher Works 
+### Future Works 
 1. Add time tag text.
 2. Add CPU numbers text.
 3. Implement the 'two color' box.
