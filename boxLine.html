@@ -1,98 +1,220 @@
 <html>
+    <head>
+        <script type="text/javascript" language="javascript">  
+        var ret;
+        
+        function handleFileSelect(evt) {
+            var files = evt.target.files; // FileList object
+            if(files[0])
+            {
+                var reader = new FileReader();
+                reader.readAsText(files[0]);
+                reader.onload = loaded;    
+            }
+        }
+        
+        function loaded(evt) {
+            var fileString = evt.target.result;
+            ret = fileString;
+        }
+        </script>
+    </head>
+
 <body>
-	<h3>Tracing Time Box plot</h3>
+	<h1>Tracing Time Box plot</h1>
 	<div id="plotSVG">
 	</div>
+    <div style="width:800;">
+        <input type="file" id="file" name="files[]" multiple />
+		<script type="text/javascript">
+		    var btn=document.getElementById('file');
+		    btn.addEventListener('change', handleFileSelect, false);
+		</script>
+		
+		<input type="button" value="Begin Draw" onclick="document.getElementById('show').value=readFile();"/>  
+	    <textarea style="margin-top:20; height:500; width:700;" id="show" name="show" cols="50" rows="8" >   
+    	</textarea>
+    </div>
 </body>
 <script>
-
-var lineWidth = 2; // the width of idle line.
-var seperatorWidth = 1; // the width of white lines at each time tag points.
-var seperatorDistance = 70;
-var bigBoxWidth = 30; // the vertical length of box.
-var smallBoxWidth = 20;
-var innerBoxWidthRatio = 0.4; // in a two color box, width(innerBox) = 0.4 * width(outerBox).
+var lineHeight = 6; // the width of idle line.
+var seperatorWidth = 4; // the width of white lines at each time tag points.
+var seperatorDistance = 500; // 500 = 1s, When /= 20000
+var bigBoxHeight = 100; // the vertical length of box.
+var smallBoxHeight = 60;
+var innerBoxWidthRatio = 0.5; // in a two color box, width(innerBox) = 0.4 * width(outerBox).
 var cpuLineMargin = 50; // the blank spaces between two cpu lines.
+var textHeight = 50; // the height of text "0s, 1s, 2s, ..."
+var textCPUWidth = 200; // the width of text "CPU 0, CPU 1, CPU 2, CPU 3"
 
-var maxLength = 2000;
+var maxLength = 20000;
 
-function colorRGB(colorName) {
-	if (colorName == "blue") return "rgb(0,0,255)";
-	if (colorName == "red") return "rgb(255,0,0)";
-	if (colorName == "green") return "rgb(0,255,0)";
-	if (colorName == "black") return "rgb(0,0,0)";
-	if (colorName == "white") return "rgb(255,255,255)";
-	return "rgb(0,0,0)";
+function readFile()
+{
+    var allEvents = []
+    var lines = ret.trim().split('\n');
+    var min = Number.MAX_VALUE, max = Number.MIN_VALUE;
+    var flag = 0;
+    for (var i = 0; i < lines.length; i++) {
+        var e = lines[i].split(' ');
+        var start = parseInt(e[1]), end = parseInt(e[2]);
+        var boxShape = "";
+        //if (e[0] == '2' && min > start) 
+        if (min > start)
+            min = start;
+        //if (e[0] == '2' && max < end) 
+        if (max < end)
+            max = end;
+        if (e[5] == "idle")
+            boxShape = "line";
+        else if (e[5] == "user") 
+            boxShape = "smallBox";
+        else
+            boxShape = "bigBox";
+        allEvents.push([e[0], start, end, boxShape, e[3], e[4]]);
+    }
+    for (var i = 0; i < allEvents.length; i++) {
+        allEvents[i][1] -= min;
+        allEvents[i][2] -= min;
+        //allEvents[i][0] = (maxLength + 0.0)/(max - min) * allEvents[i][0];
+        //allEvents[i][1] = (maxLength + 0.0)/(max - min) * allEvents[i][1]; 
+        // Set to 20000 would be great.
+        allEvents[i][1] /= 20000;
+        allEvents[i][2] /= 20000;
+        //if (allEvents[i][2] - allEvents[i][1] < 0.1)
+        //    allEvents[i][2] = allEvents[i][1] + 0.1;
+    }
+    var tempArray = allEvents.slice();
+    var filter = []
+    for (var i = 0; i < tempArray.length; i++) {
+        if (allEvents[i][2] - allEvents[i][1] > 0.0005)
+            filter.push(tempArray[i]);
+    }
+    allEvents = filter.slice();
+    var max = 0;
+    for (i = 0; i < allEvents.length; i++) {
+        if (max < allEvents[i][2]) max = allEvents[i][2];
+        //console.log(allEvents[i]);
+    }
+    console.log(allEvents.length);
+    
+    //allEvents = allEvents.slice(0, 200000);
+    function colorRGB(colorName) {
+    	if (colorName == "blue") return "rgb(0,0,255)";
+    	if (colorName == "red") return "rgb(255,0,0)";
+    	if (colorName == "green") return "rgb(0,255,0)";
+    	if (colorName == "black") return "rgb(0,0,0)";
+    	if (colorName == "white") return "rgb(255,255,255)";
+    	return "rgb(0,0,0)";
+    }
+    
+    function colorRGB2(colorString) {
+        return "rgb"+colorString;
+    }
+    // Draw a width * height rectangle with color at position (x, y).
+    function drawRectangle(x, y, width, height, color) {
+        if (width < 0) { 
+        console.log(x)
+        console.log(y)
+        console.log(width)
+        console.log(height)
+        console.log(color)
+        }
+    	return "<rect x=\""+ x +"\" y=\""+ y +"\" width=\"" + width.toFixed(2) +"\" height=\""
+    		+ height + "\" style=\"fill:" + colorRGB2(color) + ";stroke-width:3\" />"
+    }
+    
+    function drawTwoColorRec(x, y, width, height, color1, color2) {
+        return drawRectangle(x, y, width, height, color1) + 
+            drawRectangle(x, y + ((height - (height * innerBoxWidthRatio)) / 2), width, height - (height - (height * innerBoxWidthRatio)), color2);
+    }
+    
+    // Generate a event box. offsetTop is added to the vertical absolute position of the box.
+    function appendEvent2(startTime, endTime, type, offsetTop) {
+    	var height = 0, color = "black", verticalPosition = 0;
+    	if (type == "line") {
+    		height = lineHeight;
+    		verticalPosition = (bigBoxHeight - lineHeight) / 2;
+    		color = "black"; 
+    	}
+    	else if (type == "smallBox") {
+    		height = smallBoxHeight;
+    		verticalPosition = (bigBoxHeight - smallBoxHeight) / 2;
+    		color = "blue";
+    	}
+    	else if (type == "bigBox") {
+    		height = bigBoxHeight;
+    		verticalPosition = 0;
+    		color = "red";
+    	}
+    	return drawRectangle(startTime, offsetTop + verticalPosition, endTime - startTime, height, color);
+    }
+    
+    function appendEvent(startTime, endTime, type, color1, color2, offsetTop) {
+    	var height = 0, verticalPosition = 0;
+    	if (type == "line") {
+    		height = lineHeight;
+    		verticalPosition = (bigBoxHeight - lineHeight) / 2;
+            return drawRectangle(startTime, offsetTop + verticalPosition, endTime-startTime, height, color1);
+    	}
+    	else if (type == "smallBox") {
+    		height = smallBoxHeight;
+    		verticalPosition = (bigBoxHeight - smallBoxHeight) / 2;
+    	}
+    	else if (type == "bigBox") {
+    		height = bigBoxHeight;
+    		verticalPosition = 0;
+    	}
+    	return drawTwoColorRec(startTime, offsetTop + verticalPosition, endTime - startTime, height, color1, color2);
+    }
+    
+    var content = "<svg style=\"width:" + maxLength + "; height:" + (bigBoxHeight + cpuLineMargin) * 5 + "\">";
+
+    //console.log(allEvents.length);
+    //console.log(allEvnets[allEvents.length - 1]);
+    content += appendEvent(textCPUWidth - 5, textCPUWidth + max, "line", "(50, 50, 50)", "(100, 100, 100)", textHeight);
+    //content += appendEvent(0, allEvents[allEvents.length-1][2], "line", "(0,0,0)", "(0,0,0)");
+    for (i = 0; i < allEvents.length; i++) {
+        // Append a event at the end of CPU 0, vertical position offset = 0 * one line.
+        if (allEvents[i][0] == '0')
+    	    content += appendEvent(textCPUWidth + allEvents[i][1], textCPUWidth + allEvents[i][2], allEvents[i][3], allEvents[i][4], allEvents[i][5], textHeight);
+    }
+    // Draw the CPU 1 
+    content += appendEvent(textCPUWidth - 5, textCPUWidth + max, "line", "(50, 50, 50)", "(100, 100, 100)", textHeight + bigBoxHeight + cpuLineMargin);
+    for (i = 0; i < allEvents.length; i++) {
+        // Append a event at the end of CPU 1, vertical position offset = 0 * one line.
+        if (allEvents[i][0] == '1')
+    	    content += appendEvent(textCPUWidth + allEvents[i][1], textCPUWidth + allEvents[i][2], allEvents[i][3], allEvents[i][4], allEvents[i][5], textHeight + bigBoxHeight + cpuLineMargin);
+    }
+    // Draw the CPU 2 
+    content += appendEvent(textCPUWidth - 5, textCPUWidth + max, "line", "(50, 50, 50)", "(100, 100, 100)", textHeight + 2 * (bigBoxHeight + cpuLineMargin));
+    for (i = 0; i < allEvents.length; i++) {
+        // Append a event at the end of CPU 3, vertical position offset = 0 * one line.
+        if (allEvents[i][0] == '2')
+    	    content += appendEvent(textCPUWidth + allEvents[i][1], textCPUWidth + allEvents[i][2], allEvents[i][3], allEvents[i][4], allEvents[i][5], textHeight + 2 * (bigBoxHeight + cpuLineMargin));
+    }
+    // Draw the CPU 3 
+    content += appendEvent(textCPUWidth - 5, textCPUWidth + max, "line", "(50, 50, 50)", "(100, 100, 100)", textHeight + 3 * (bigBoxHeight + cpuLineMargin));
+    for (i = 0; i < allEvents.length; i++) {
+        // Append a event at the end of CPU 3, vertical position offset = 0 * one line.
+        if (allEvents[i][0] == '3')
+    	    content += appendEvent(textCPUWidth + allEvents[i][1], textCPUWidth + allEvents[i][2], allEvents[i][3], allEvents[i][4], allEvents[i][5], textHeight + 3 * (bigBoxHeight + cpuLineMargin));
+    }
+
+    // Draw the vertical white time tag line.
+    for (i = 0; i < maxLength; i += seperatorDistance) {
+        content += drawRectangle(textCPUWidth + i, 0, seperatorWidth, (bigBoxHeight + cpuLineMargin) * 4,"(255,255,255)");
+        content += "<text x=\"" + (textCPUWidth + i) + "\" y=\"" + textHeight + "\" font-size=\"30px\" fill=\"black\">" + i/seperatorDistance + "s</text>";
+    }
+    
+    for (i = 0; i < 4; i++) {
+        content += "<text x=\"10\" y=\"" + ((i + 1) * (bigBoxHeight + cpuLineMargin) - 25) + "\" font-size=\"50px\" fill=\"black\">CPU " + i + " </text>";
+    }
+    content += "</svg>"; 
+    document.getElementById("plotSVG").innerHTML = content;
+    
+    return allEvents.slice(0,100);
 }
-
-// Draw a width * height rectangle with color at position (x, y).
-function drawRectangle(x, y, width, height, color) {
-	return "<rect x=\""+ x +"\" y=\""+ y +"\" width=\"" + width +"\" height=\""
-		+ height + "\" style=\"fill:" + colorRGB(color) + ";stroke-width:3\" />"
-}
-
-function drawTwoColorRec(x, y, width, height, color1, color2) {
-
-}
-
-// Generate a event box. offsetTop is added to the vertical absolute position of the box.
-function appendEvent(startTime, endTime, type, offsetTop) {
-	var height = 0, color = "black", verticalPosition = 0;
-	if (type == "line") {
-		height = lineWidth;
-		verticalPosition = (bigBoxWidth - lineWidth) / 2;
-		color = "black"; 
-	}
-	else if (type == "smallBox") {
-		height = smallBoxWidth;
-		verticalPosition = (bigBoxWidth - smallBoxWidth) / 2;
-		color = "blue";
-	}
-	else if (type == "bigBox") {
-		height = bigBoxWidth;
-		verticalPosition = 0;
-		color = "red";
-	}
-	return drawRectangle(startTime, offsetTop + verticalPosition, endTime - startTime, height, color);
-}
-
-var content = "<svg style=\"width:" + maxLength + "; height:" + (bigBoxWidth + cpuLineMargin) * 5 + "\">";
-
-var events0 = [[0,100,"line"],[100,150,"smallBox"],[150,250,"bigBox"],[250,252,"line"],[252,278,"smallBox"], [278, 300, "bigBox"], [300, 350, "line"],[350,450,"smallBox"],[450,1150,"bigBox"],[1150,1252,"line"]]
-var events1 = [[0,50,"line"],[50,150,"smallBox"],[150,250,"bigBox"],[250,252,"line"],[252,278,"smallBox"], [278, 300, "bigBox"], [300, 350, "line"],[350,450,"smallBox"],[450,452,"bigBox"],[452,466,"line"],[466,468,"bigBox"],[468,1252,"line"]]
-var events2 = [[0,200,"line"],[200,250,"bigBox"],[250,252,"line"],[252,283,"smallBox"], [283, 300, "bigBox"], [300, 340, "line"],[340,440,"smallBox"],[440,550,"bigBox"],[550,1150,"smallBox"],[1150,1252,"line"]]
-var events3 = [[0,1000,"line"],[1000,1150,"bigBox"],[1150,1252,"line"]]
-
-// Draw the CPU 0
-for (i = 0; i < events0.length; i++) {
-    // Append a event at the end of CPU 0, vertical position offset = 0 * one line.
-	content += appendEvent(events0[i][0], events0[i][1], events0[i][2], 0);
-}
-
-// Draw the CPU 1
-for (i = 0; i < events1.length; i++) {
-    // Append an event at the end of CPU 1, vertical position offset = 1 * one line.
-	content += appendEvent(events1[i][0], events1[i][1], events1[i][2], bigBoxWidth + cpuLineMargin);
-}
-
-// Draw the CPU 2
-for (i = 0; i < events2.length; i++) {
-    // Append an event at the end of CPU 2, vertical position offset = 2 * one line.
-	content += appendEvent(events2[i][0], events2[i][1], events2[i][2], 2 * (bigBoxWidth + cpuLineMargin));
-}
-
-// Draw the CPU 3
-for (i = 0; i < events3.length; i++) {
-    // Append an event at the end of CPU 3, vertical position offset = 3 * one line.
-	content += appendEvent(events3[i][0], events3[i][1], events3[i][2], 3 * (bigBoxWidth + cpuLineMargin));
-}
-
-// Draw the vertical white time tag line.
-for (i = seperatorDistance; i < maxLength; i += seperatorDistance)
-	content += drawRectangle(i, 0, seperatorWidth, (bigBoxWidth + cpuLineMargin) * 4,"white");
-
-content += "</svg>"; 
-document.getElementById("plotSVG").innerHTML = content;
 </script>
 </html>
 

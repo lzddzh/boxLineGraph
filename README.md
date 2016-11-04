@@ -2,8 +2,10 @@
 
 ### Introduction
 This code is part of course project [CS6280](http://www.comp.nus.edu.sg/~sites/cs6280/week1.html), school of computing, NUS.
-This simple script is a prototype of our final box line graph which shows the traced events on different CPU.
-Now it only has basic features of the graph, but more features later can be implemented using the same idea here. And the idea is simple enough.
+
+This code not parse the '.trace' file, you need to parse the trace file yourself and output the events in a file.
+Then this program will convert your output file into a picture in the web browser.
+
 
 ### Idea
 [Draw Box Line Graph Using JavaScript+SVG --- Hand by Hand](https://docs.google.com/document/d/1thR_uHmaZhuNjbCk6WJZ1E-DNqS60jVItxtxHZfSe5w/edit?usp=sharing)
@@ -18,24 +20,39 @@ Write on
 * Any text editor you like.
 
 ### How to run 
-Directly drag the boxLine.html file into a brower.
+1. Directly drag the boxLine.html file into a brower.
+2. Press the "Choose File" button, and choose 'trace153809.txt' under the same program directory, or your own input file.
+3. Press the "Begin Draw" button, after a while, the graph will shows on your screen.
 
-or
-
-In the terminal opened at the directory of our file: 
-```
-google-chrome boxLine.html
-```
+Tips1: You can zoom-in and zoom-out by the browser. (Ctrl +/-)
+Tips2: If you are using Chrome, use this one to capture a full picture of the graph: [Full Page Capture Extension](https://chrome.google.com/webstore/detail/full-page-screen-capture/fdpohaocaechififmbbbbbknoalclacl?utm_source=chrome-app-launcher-info-dialog)
 
 ### Program Input 
-For now, the program input are defined as follows:  
+This program input from a file that stores events as below formats:
 
-*4* JavaScript arrays directly writen in code, and each array contains a number of elements. Each element contains 2 intagers and 1 string: *startTime*, *endTime* and *type*.
-These elements each represents an event running on CPU. The *startTime* and *endTime* stands for the event start and end time, while the string *type*,
-for now(remember this is just a prototype), just has three values "line", "smallBox" and "bigBox". 
+<cpu>, <eventStartTime>, <eventEndTime>, <color1>, <color2>, <type>
 
-For example, an array can be [[0,100,"line"],[100,150,"bigBox"],[150,180,"line"]]
+Each represents the cpu number, the event start time in 0.1 us, the event
+ end time in 0.1 us, the two colors you wants to use for this event, and the
+`<type> is in  {user, trap, syscall, irq, idle}`.
 
+For example, the First 10 lines of the Trace 153809 should be:
+
+```
+2 14766898778511278 14766898778511283 (10,48,80) (100,128,200) syscall
+2 14766898778523730 14766898778523735 (10,48,80) (100,128,200) syscall
+2 14766898778523547 14766898778523867 (28,150,125) (55,92,241) user
+2 14766898778523841 14766898778523846 (10,48,80) (100,128,200) syscall
+2 14766898778523904 14766898778523909 (10,48,80) (100,128,200) syscall
+2 14766898778523995 14766898778524051 (10,48,80) (100,128,200) syscall
+2 14766898778524142 14766898778524264 (10,48,80) (100,128,200) syscall
+2 14766898778524280 14766898778524323 (10,48,80) (100,128,200) syscall
+2 14766898778523867 14766898778524385 (249,27,234) (166,217,218) user
+2 14766898778524367 14766898778524372 (10,48,80) (100,128,200) syscall
+ ...
+```
+Use `Choose File` button to choose a file like above, then browser will give 
+you the graph.
     
 ### Parameter Settings
 Now we have a few parameters to set the graph. They are at the beginning of the code.
@@ -49,13 +66,13 @@ Now we have a few parameters to set the graph. They are at the beginning of the 
 
 
 ### Future Works 
-1. Add time tag text.
-2. Add CPU numbers text.
-3. Implement the 'two color' box.
+1. Add time tag text. Done.
+2. Add CPU numbers text. Done.
+3. Implement the 'two color' box. Done.
 4. Add a layer to convert real CPU events data to our *element* in the input array.
 This includes:
-* Add control to event color.
-* Convert microseconds float number to our *startTime* and *endTime* in the *element*. 
+* Add control to event color. Done.
+* Convert microseconds float number to our *startTime* and *endTime* in the *element*.  Done.
 5. Design zoom-in and zoom-out. (Remember we are in a web brower.)
 
 ### Team Member
