@@ -31,7 +31,7 @@ Tips2: If you are using Chrome, use this one to capture a full picture of the gr
 ### Program Input 
 This program input from a file that stores events as below formats:
 
-<cpu>, <eventStartTime>, <eventEndTime>, <color1>, <color2>, <type>
+\<cpu\>, \<eventStartTime\>, \<eventEndTime\>, \<color1\>, \<color2\>, \<type\>
 
 Each represents the cpu number, the event start time in 0.1 us, the event
  end time in 0.1 us, the two colors you wants to use for this event, and the
