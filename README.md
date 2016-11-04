@@ -6,6 +6,7 @@ This code is part of course project [CS6280](http://www.comp.nus.edu.sg/~sites/c
 This code not parse the '.trace' file, you need to parse the trace file yourself and output the events in a file.
 Then this program will convert your output file into a picture in the web browser.
 
+![Alt text](/ScreenShot/graph.png?raw=true "Optional Title")
 
 ### Idea
 [Draw Box Line Graph Using JavaScript+SVG --- Hand by Hand](https://docs.google.com/document/d/1thR_uHmaZhuNjbCk6WJZ1E-DNqS60jVItxtxHZfSe5w/edit?usp=sharing)
